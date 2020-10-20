@@ -1,11 +1,11 @@
 package com.dji.importSDKDemo;
 
 import android.Manifest;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
-import android.content.Intent;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
@@ -60,6 +60,7 @@ public class MainActivity extends AppCompatActivity {
     private List<String> missingPermission = new ArrayList<>();
     private AtomicBoolean isRegistrationInProgress = new AtomicBoolean(false);
     private static final int REQUEST_PERMISSION_CODE = 12345;
+    TextView compassView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -75,10 +76,96 @@ public class MainActivity extends AppCompatActivity {
         //Initialize DJI SDK Manager
         mHandler = new Handler(Looper.getMainLooper());
 
-        TextView compassView = (TextView)findViewById(R.id.CompassValue);
+        compassView = (TextView)findViewById(R.id.CompassValue);
         String temp = "";
 
-        if (ModuleVerificationUtil.isFlightControllerAvailable()) {
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                while (true){
+                    if(MApplication.isAircraftConnected()){
+                        if (ModuleVerificationUtil.isFlightControllerAvailable()) {
+                            FlightController flightController =
+                                    ((Aircraft) MApplication.getProductInstance()).getFlightController();
+
+                            flightController.setStateCallback(new FlightControllerState.Callback() {
+                                @Override
+                                public void onUpdate(@NonNull FlightControllerState djiFlightControllerCurrentState) {
+                                    if (null != compass) {
+                                        String description =
+                                                "CalibrationStatus: " + compass.getCalibrationState() + "\n"
+                                                        + "Heading: " + compass.getHeading() + "\n"
+                                                        + "isCalibrating: " + compass.isCalibrating() + "\n";
+
+                                        //changeDescription(description);
+                                        //compassView.setText(description);
+                                    }
+                                }
+                            });
+                            if (ModuleVerificationUtil.isCompassAvailable()) {
+                                compass = flightController.getCompass();
+                                //compassView.setText(String.valueOf(compass.getHeading()));
+                                compassView.post(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        compassView.setText(String.valueOf(compass.getHeading()));
+                                    }
+                                });
+
+                            }
+                        }else{
+                            showToast("FlightControllerCurrent Error");
+                        }
+                    }else {
+                        showToast("AircraftconnectedCurrent Error");
+                    }
+                    try {
+                        Thread.sleep(500);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+        }).start();
+        /*while (true){
+            if(MApplication.isAircraftConnected()){
+                if (ModuleVerificationUtil.isFlightControllerAvailable()) {
+                    FlightController flightController =
+                            ((Aircraft) MApplication.getProductInstance()).getFlightController();
+
+                    flightController.setStateCallback(new FlightControllerState.Callback() {
+                        @Override
+                        public void onUpdate(@NonNull FlightControllerState djiFlightControllerCurrentState) {
+                            if (null != compass) {
+                                String description =
+                                        "CalibrationStatus: " + compass.getCalibrationState() + "\n"
+                                                + "Heading: " + compass.getHeading() + "\n"
+                                                + "isCalibrating: " + compass.isCalibrating() + "\n";
+
+                                //changeDescription(description);
+                                compassView.setText(description);
+                            }
+                        }
+                    });
+                    if (ModuleVerificationUtil.isCompassAvailable()) {
+                        compass = flightController.getCompass();
+                        compassView.setText(String.valueOf(compass.getHeading()));
+                    }
+                }else{
+                    showToast("FlightControllerCurrent Error");
+                }
+            }else {
+                showToast("AircraftconnectedCurrent Error");
+            }
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }*/
+
+
+        /*if (ModuleVerificationUtil.isFlightControllerAvailable()) {
             FlightController flightController =
                     ((Aircraft) MApplication.getProductInstance()).getFlightController();
 
@@ -102,7 +189,7 @@ public class MainActivity extends AppCompatActivity {
             }
         }else{
             showToast("FlightControllerCurrent Error");
-        }
+        }*/
 
 
 
