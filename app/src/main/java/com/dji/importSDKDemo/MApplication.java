@@ -23,6 +23,7 @@ public class MApplication extends Application {
     private static BluetoothProductConnector bluetoothConnector = null;
     private static Bus bus = new Bus(ThreadEnforcer.ANY);
     private static Application app = null;
+    private DemoApplication demoApplication;
 
     /**
      * Gets instance of the specific product connected after the
@@ -76,6 +77,17 @@ public class MApplication extends Application {
         MultiDex.install(this);
         com.secneo.sdk.Helper.install(this);
         app = this;
+        if (demoApplication == null) {
+            demoApplication = new DemoApplication();
+            demoApplication.setContext(this);
+        }
+
+    }
+
+    @Override
+    public void onCreate() {
+        super.onCreate();
+        demoApplication.onCreate();
     }
 
 }
